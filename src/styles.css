@@ -1,0 +1,14 @@
+*{
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: -1px;
+    outline: none !important;
+}
+
+.bg-light{
+    background-color: #f2f2f2 !important;
+}
+
+.rounded{
+    overflow: hidden;
+    border-radius: 0.8em !important;
+}
