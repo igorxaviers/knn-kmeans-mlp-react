@@ -3,12 +3,16 @@ class Knn{
     #data;
     #dataTraining;
     #dataTest;
+    #results;
+    #classes;
 
     constructor(){
         this.#kNeighbors = 0;
         this.#data = [];
         this.#dataTraining = [];
         this.#dataTest = [];
+        this.#results = [];
+        this.#classes = [];
     }
 
     train(data){
@@ -22,24 +26,31 @@ class Knn{
         var distances = [];
         var distance = 0;
         var nearestNeighbors = Object.create(null);
-        const selectedClass = '';
+        let selectedClass = '';
 
         this.#dataTest.forEach((test, testIndex) => {
-            distances = [];                
+            minors = [];
+            distances = [];    
+            nearestNeighbors = Object.create(null);   
+            
+            
             this.#dataTraining.forEach((training, trainingIndex) => {
                 distance = this.euclidianDistance(test, training);
                 distances.push({distance, index: trainingIndex});
             });
+
+            //Ordenar pela menor distância
             distances.sort((a, b) => (a.distance > b.distance) ? 1 : -1);
+
+            //Escolher os K vizinhos
             for(let i=0; i<this.#kNeighbors; i++){
                 minors[i] = ({
                     distance: distances[i].distance,
                     class: this.#dataTraining[distances[i].index][test.length-1]
                 });
             }
-            console.log(minors);
-            debugger;
-  
+
+            //Contagem de ocorrência dos vizinhos
             for (const nome of minors) {
               if (nearestNeighbors[nome.class]) {
                 nearestNeighbors[nome.class] += 1;
@@ -47,29 +58,27 @@ class Knn{
                 nearestNeighbors[nome.class] = 1;
               }
             }
-            console.log(nearestNeighbors);
-            nearestNeighbors.sort();
-            selectedClass = Object.keys(nearestNeighbors)[0];
 
-            // for (var i = 0; i < this.#kNeighbors; i++) {
-            //     minor = Number.MAX_SAFE_INTEGER - 1;
-            //     debugger;
-            //     for (var index = 0; index < distances.length - 1 && minors.length <= this.#kNeighbors; index++) {
-            //         if(distances[index].distance < minor){
-            //             minor = { 
-            //                 distance: distances[index].distance,
-            //                 class: this.#dataTraining[distances[index].index]//[length-1]
-            //             };
-            //         }
-            //     }
-    
-            //     minors.push(minor);
-            //     distances.splice(index, 1);
-            // }
+            let classes = [];
+
+
+            //Estrurura de vizinhos
+            for(let classAux in nearestNeighbors){
+                classes.push({class: classAux, value: nearestNeighbors[classAux], index: testIndex});
+            }
+
+            //Maior ocorrência de vizinho primeiro
+            classes.sort((a, b) => (a.value < b.value) ? 1 : -1);
+
+            //Escolher o vizinho de maior ocorrência
+            this.#results.push(classes[0]);
+
+            //Inserindo todas as possíveis classes na estrutura 
+            this.#classes.push(test[test.length-1]);
+
         });  
 
-
-        console.log(minors);
+        console.log(this.#results);
     }
 
     euclidianDistance(test, training){
@@ -87,6 +96,15 @@ class Knn{
     set setK(k){
         this.#kNeighbors = k;
     }
+
+    get getPredictions(){
+        return this.#results;
+    }
+
+    get getClasses(){
+        return this.#classes;
+    }
+
 }
 
 export default Knn;

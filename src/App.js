@@ -9,25 +9,11 @@ function App() {
   const [fileHeader, setHeader] = useState([]);
   const [fileDataTraining, setFileDataTraining] = useState([]);
   const [fileDataTest, setFileDataTest] = useState([]);
+  const [confusionMatrix, setConfusionMatrix] = useState([]);
 
   const [errorMessage, setErrorMessage] = useState("");
 
-  // useEffect(() => {
-  //   async function fetchData(){
-  //     const data = await getFile();
-  //     setHeader(data[0]);
-  //     setFileData(data.slice(1));
-  
-  //     console.log(fileHeader);
-  //     console.log(fileData);
-  //   }
-  //   fetchData();
-  // }, []);
-
   const classify = () => {
-
-    // if(kNeighbor > 0 && fileDataTraining.lenght > 0 && fileDataTest.lenght > 0) {
-    //   setErrorMessage("");
 
       //knn classifier
       const knnClassifier = new Knn();
@@ -35,18 +21,20 @@ function App() {
       knnClassifier.train(fileDataTraining);
       knnClassifier.predict(fileDataTest);
 
+      //Resultado das predições para a base de teste a partir da base de treinamento
+      let result = knnClassifier.getPredictions;
 
-    // }
-    // else {
-    //   setErrorMessage("Campos incompletos!");
-    // }
-    
-    // knnClassifier.setOptions({k: kNeighbor});
-    // knnClassifier.train(fileDataTraining);
-    // const result = knnClassifier.predict(fileDataTest);
-    // console.log(result);
-    
-    
+      //Criar set com apenas as classes que não se repetem [CA,CB,CC,CE,CD...]
+      let classes = [...new Set(knnClassifier.getClasses)];
+
+      //Ordenar as classes
+      classes.sort();
+
+      //Criar matriz Classes X Classes
+      let auxMatrix = new Array(classes.length);
+      for (let i = 0; i < auxMatrix.length; i++) {
+        auxMatrix[i] = new Array(classes.length);
+      }
   }
 
   const getFile = (e, type) => {
@@ -79,7 +67,8 @@ function App() {
       for(let i = 0; i < row.length - 1; i++){
         row[i] = parseFloat(row[i]);
       }
-      data.push(row);
+      if(row.length > 1)
+        data.push(row);
     })
     return data;
   }
@@ -109,7 +98,7 @@ function App() {
           />
 
           <div className="col-5">
-            <label class="form-label">K</label>
+            <label className="form-label">K</label>
             <input 
               type="number" 
               className="form-control"
