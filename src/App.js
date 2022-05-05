@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Knn from './Knn'
+import ConfusionMatrix from "./components/ConfusionMatrix";
  // import { getFile } from "./importFile";
 
 function App() {
@@ -10,8 +11,12 @@ function App() {
   const [fileDataTraining, setFileDataTraining] = useState([]);
   const [fileDataTest, setFileDataTest] = useState([]);
   const [confusionMatrix, setConfusionMatrix] = useState([]);
-
+  const [classes, setClasses] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
+
+  // useEffect(() => {
+  //   setConfusionMatrix(new Array());
+  // });
 
   const classify = () => {
 
@@ -29,12 +34,35 @@ function App() {
 
       //Ordenar as classes
       classes.sort();
+      setClasses(classes);
 
       //Criar matriz Classes X Classes
       let auxMatrix = new Array(classes.length);
+      auxMatrix.fill(0);
       for (let i = 0; i < auxMatrix.length; i++) {
         auxMatrix[i] = new Array(classes.length);
+        auxMatrix[i].fill(0);
       }
+
+
+      // debugger;
+      //Contabilizar as ocorrências de classes
+      classes.forEach((classL, lineIndex) => {
+        result.forEach((resultN, testIndex) => {
+          let correctClass = fileDataTest[testIndex][fileDataTest[testIndex].length-1];
+
+          if(classL === resultN.class && correctClass == resultN.class){
+            auxMatrix[lineIndex][lineIndex] += 1;
+          }
+          else if(classL === correctClass){
+            let index = classes.indexOf(resultN.class);
+            auxMatrix[lineIndex][index] += 1;
+          }
+        });
+      });
+
+      setConfusionMatrix(auxMatrix);
+      console.log(auxMatrix);
   }
 
   const getFile = (e, type) => {
@@ -53,10 +81,6 @@ function App() {
       else
         setFileDataTest(data.slice(1));
     }
-
-    console.log(fileHeader);
-    console.log(fileDataTraining);
-    console.log(fileDataTest);
   }
 
   const csvToJson = (csv) => {
@@ -73,12 +97,22 @@ function App() {
     return data;
   }
 
+  const showMatrix = () => {
+    confusionMatrix.map((line, L) => {
+      line.map((column, C) => {
+        return(
+          confusionMatrix[L][C]
+        )
+      });
+    })
+  }
+
 
   return (
     <>
-      <div className="col-md-6 mx-auto pt-5">
+      <div className="col-lg-6 col-md-8 col-12 mx-auto pt-5">
         <h1 className="text-center">knn k-means</h1>
-        <div className="mt-5 mb-3 col-7 border bg-white rounded p-3 px-4 mx-auto">
+        <div className="mt-5 mb-3 col-md-8 border bg-white rounded p-3 px-4 mx-auto">
           <label htmlFor="csv-file" className="form-label">Arquivo CSV de treino</label>
           <input 
             className="form-control mb-3" 
@@ -107,7 +141,6 @@ function App() {
               max={50} />
           </div>
 
-
           {
             errorMessage !== "" 
             ?
@@ -122,6 +155,16 @@ function App() {
             <button className="btn btn-dark" type="button" onClick={() => {classify()}}>Calcular Acurácia</button>
           </div>
         </div>
+
+        {
+          showMatrix()
+        }
+
+        {/* <ConfusionMatrix 
+          classes={classes} 
+          size={classes.length} 
+          matrix={confusionMatrix}
+        /> */}
 
       </div>
     </>

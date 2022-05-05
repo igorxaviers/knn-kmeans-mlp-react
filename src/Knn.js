@@ -33,16 +33,16 @@ class Knn{
             distances = [];    
             nearestNeighbors = Object.create(null);   
             
-            
+            //Calcular a distância para todos os registros da base de treinamento
             this.#dataTraining.forEach((training, trainingIndex) => {
                 distance = this.euclidianDistance(test, training);
                 distances.push({distance, index: trainingIndex});
             });
 
-            //Ordenar pela menor distância
+            //Ordenar distâncias pelo menor valor
             distances.sort((a, b) => (a.distance > b.distance) ? 1 : -1);
 
-            //Escolher os K vizinhos
+            //Escolher os K vizinhos (das distâncias)
             for(let i=0; i<this.#kNeighbors; i++){
                 minors[i] = ({
                     distance: distances[i].distance,
@@ -54,15 +54,15 @@ class Knn{
             for (const nome of minors) {
               if (nearestNeighbors[nome.class]) {
                 nearestNeighbors[nome.class] += 1;
-              } else {
+              }
+              else {
                 nearestNeighbors[nome.class] = 1;
               }
             }
 
-            let classes = [];
-
 
             //Estrurura de vizinhos
+            let classes = [];
             for(let classAux in nearestNeighbors){
                 classes.push({class: classAux, value: nearestNeighbors[classAux], index: testIndex});
             }
