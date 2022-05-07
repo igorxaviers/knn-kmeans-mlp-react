@@ -97,6 +97,23 @@ function App() {
     return data;
   }
 
+  // const getFile = (e, type) => {
+  //   // let file = e.target.files[0];
+  //   // let reader = new FileReader();
+    
+  //   // reader.readAsText(file);
+  //   // reader.onload = (e) => {
+  //   //   let csv = e.target.result;
+  //   //   let data = csvToJson(csv);
+  //     let data = csvToJson(e.target.files[0]);
+  //     setHeader(data[0]);
+
+  //     if(type === "training")
+  //       setFileDataTraining(data.slice(1));
+  //     else
+  //       setFileDataTest(data.slice(1));
+  // }
+
   const showMatrix = () => {
     confusionMatrix.map((line, L) => {
       line.map((column, C) => {
@@ -160,11 +177,19 @@ function App() {
           showMatrix()
         }
 
-        {/* <ConfusionMatrix 
-          classes={classes} 
-          size={classes.length} 
-          matrix={confusionMatrix}
-        /> */}
+        
+        {
+          (confusionMatrix != null && confusionMatrix.length > 0)
+          ?
+            <ConfusionMatrix 
+              classes={classes} 
+              size={classes.length} 
+              matrix={confusionMatrix}
+            />
+          : 
+          null
+        }
+        
 
       </div>
     </>
