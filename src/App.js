@@ -5,14 +5,22 @@ import ConfusionMatrix from "./components/ConfusionMatrix";
 
 function App() {
 
-  const [kNeighbor , setKNeighbor] = useState(0);
+  const [algorithm, setAlgorithm] = useState("knn");
 
+  //knn
   const [fileHeader, setHeader] = useState([]);
   const [fileDataTraining, setFileDataTraining] = useState([]);
   const [fileDataTest, setFileDataTest] = useState([]);
   const [confusionMatrix, setConfusionMatrix] = useState([]);
+  const [kNeighbor , setKNeighbor] = useState(0);
   const [classes, setClasses] = useState([]);
+
+  //k-means
+  const [fileHeaderKMeans, setHeaderKMeans] = useState([]);
+  const [fileDataKMeans, setFileDataKMeans] = useState([]);
+
   const [errorMessage, setErrorMessage] = useState("");
+
 
   // useEffect(() => {
   //   setConfusionMatrix(new Array());
@@ -74,12 +82,19 @@ function App() {
       let csv = e.target.result;
       let data = csvToJson(csv);
       
-      setHeader(data[0]);
+      if(algorithm === "knn") {
+        setHeader(data[0]);
 
-      if(type === "training")
-        setFileDataTraining(data.slice(1));
-      else
-        setFileDataTest(data.slice(1));
+        if(type === "training")
+          setFileDataTraining(data.slice(1));
+        else
+          setFileDataTest(data.slice(1));
+      }
+      else {
+        setHeaderKMeans(data[0]);
+
+        setFileDataKMeans(data.slice(1));
+      }
     }
   }
 
@@ -130,33 +145,59 @@ function App() {
       <div className="col-lg-6 col-md-8 col-12 mx-auto pt-5">
         <h1 className="text-center">knn k-means</h1>
         <div className="mt-5 mb-3 col-md-8 border bg-white rounded p-3 px-4 mx-auto">
-          <label htmlFor="csv-file" className="form-label">Arquivo CSV de treino</label>
-          <input 
-            className="form-control mb-3" 
-            type="file" 
-            id="csv-file"
-            accept=".csv"
-            onChange={(e) => getFile(e, "training")}
-          />
 
-          <label htmlFor="csv-file" className="form-label">Arquivo CSV de teste</label>
-          <input 
-            className="form-control mb-3" 
-            type="file" 
-            id="csv-file"
-            accept=".csv"
-            onChange={(e) => getFile(e, "test")}
-          />
+          <label htmlFor="csv-file" className="form-label">Algoritmo</label>
+          <select className="form-select mb-3" value={algorithm} onChange={(e) => setAlgorithm(e.target.value)}>
+            <option value="knn">KNN</option>
+            <option value="k-means">K-Means</option>
+          </select>
 
-          <div className="col-5">
-            <label className="form-label">K</label>
-            <input 
-              type="number" 
-              className="form-control"
-              onChange={(e) => setKNeighbor(parseInt(e.target.value))}
-              min={0}
-              max={50} />
-          </div>
+          {
+            (algorithm === "knn")
+            ?
+              <>
+                <label htmlFor="csv-file" className="form-label">Arquivo CSV de treino</label>
+                <input
+                  className="form-control mb-3"
+                  type="file"
+                  id="csv-file"
+                  accept=".csv"
+                  onChange={(e) => getFile(e, "training")}
+                />
+
+                <label htmlFor="csv-file" className="form-label">Arquivo CSV de teste</label>
+                <input
+                  className="form-control mb-3"
+                  type="file"
+                  id="csv-file"
+                  accept=".csv"
+                  onChange={(e) => getFile(e, "test")}
+                />
+
+                <div className="col-5">
+                  <label className="form-label">K</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    onChange={(e) => setKNeighbor(parseInt(e.target.value))}
+                    min={0}
+                    max={50} />
+                </div>
+              </>
+            :
+            <>
+              <label htmlFor="csv-file" className="form-label">Arquivo CSV</label>
+              <input
+                className="form-control mb-3"
+                type="file"
+                id="csv-file"
+                accept=".csv"
+                onChange={(e) => getFile(e, "")}
+              />
+            </>
+          }
+          
+          
 
           {
             errorMessage !== "" 
