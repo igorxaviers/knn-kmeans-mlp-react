@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Knn from './Knn'
+import KMeans from "./KMeans";
 import ConfusionMatrix from "./components/ConfusionMatrix";
  // import { getFile } from "./importFile";
 
@@ -18,6 +19,10 @@ function App() {
   //k-means
   const [fileHeaderKMeans, setHeaderKMeans] = useState([]);
   const [fileDataKMeans, setFileDataKMeans] = useState([]);
+  const [kClusters , setKClusters] = useState(0);
+  const [labels, setLabels] = useState([]);
+  const [centroids, setCentroids] = useState([]);
+
 
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -26,7 +31,7 @@ function App() {
   //   setConfusionMatrix(new Array());
   // });
 
-  const classify = () => {
+  const classifyKnn = () => {
 
       //knn classifier
       const knnClassifier = new Knn();
@@ -53,7 +58,6 @@ function App() {
       }
 
 
-      // debugger;
       //Contabilizar as ocorrências de classes
       classes.forEach((classL, lineIndex) => {
         result.forEach((resultN, testIndex) => {
@@ -71,6 +75,21 @@ function App() {
 
       setConfusionMatrix(auxMatrix);
       console.log(auxMatrix);
+  }
+
+  const classifyKMeans = () => {
+    const kmeansClassifier = new KMeans();
+    kmeansClassifier.setKClusters = kClusters;
+    kmeansClassifier.train(fileDataKMeans);
+    kmeansClassifier.predict(fileDataKMeans);
+
+    debugger;
+    let labelsAux = kmeansClassifier.getDistances;
+    let centroids = kmeansClassifier.getCentroids;
+    
+    setLabels(labelsAux);
+    setCentroids(centroids);
+
   }
 
   const getFile = (e, type) => {
@@ -92,7 +111,6 @@ function App() {
       }
       else {
         setHeaderKMeans(data[0]);
-
         setFileDataKMeans(data.slice(1));
       }
     }
@@ -101,33 +119,33 @@ function App() {
   const csvToJson = (csv) => {
     const lines = csv.split('\r\n');
     let data = [];
-    lines.forEach(line =>{
-      let row = line.split(',');
-      for(let i = 0; i < row.length - 1; i++){
-        row[i] = parseFloat(row[i]);
+    lines.forEach((line, index) => {
+      if(index > 0) {
+        let row = line.split(',');
+        
+        if(algorithm === "kmeans") {
+          row = row.slice(0, row.length-1);
+          for(let i = 0; i < row.length; i++){
+            row[i] = parseFloat(row[i]);
+          }
+        }
+        else{
+          for(let i = 0; i < row.length - 1; i++){
+            row[i] = parseFloat(row[i]);
+          }
+        }
+
+        if(row.length > 1)
+          data.push(row);
       }
-      if(row.length > 1)
+      else {
+        let row = line.split(',');
+        
         data.push(row);
-    })
+      }
+    });
     return data;
   }
-
-  // const getFile = (e, type) => {
-  //   // let file = e.target.files[0];
-  //   // let reader = new FileReader();
-    
-  //   // reader.readAsText(file);
-  //   // reader.onload = (e) => {
-  //   //   let csv = e.target.result;
-  //   //   let data = csvToJson(csv);
-  //     let data = csvToJson(e.target.files[0]);
-  //     setHeader(data[0]);
-
-  //     if(type === "training")
-  //       setFileDataTraining(data.slice(1));
-  //     else
-  //       setFileDataTest(data.slice(1));
-  // }
 
   const showMatrix = () => {
     confusionMatrix.map((line, L) => {
@@ -139,6 +157,79 @@ function App() {
     })
   }
 
+  const renderKnn = () => {
+    let output = 
+      <>
+        <label htmlFor="csv-file" className="form-label">Arquivo CSV de treino</label>
+        <input
+          className="form-control mb-3"
+          type="file"
+          id="csv-file"
+          accept=".csv"
+          onChange={(e) => getFile(e, "training")}
+        />
+
+        <label htmlFor="csv-file" className="form-label">Arquivo CSV de teste</label>
+        <input
+          className="form-control mb-3"
+          type="file"
+          id="csv-file"
+          accept=".csv"
+          onChange={(e) => getFile(e, "test")}
+        />
+
+        <div className="col-5">
+          <label className="form-label">K</label>
+          <input
+            type="number"
+            className="form-control"
+            onChange={(e) => setKNeighbor(parseInt(e.target.value))}
+            min={0}
+            max={50} />
+        </div>
+
+        <div className="d-grid gap-2 col-6 mx-auto my-4">
+          <button className="btn btn-dark" type="button" onClick={() => {classifyKnn()}}>Calcular Acurácia</button>
+        </div>
+      </>
+      
+    return output;
+  }
+
+  const renderKmeans = () => {
+    let output =  
+    <>
+      <label htmlFor="csv-file" className="form-label">Arquivo CSV</label>
+      <input
+        className="form-control mb-3"
+        type="file"
+        id="csv-file"
+        accept=".csv"
+        onChange={(e) => getFile(e, "")}
+      />
+
+      <div className="col-5">
+        <label className="form-label">K</label>
+        <input
+          type="number"
+          className="form-control"
+          onChange={(e) => setKClusters(parseInt(e.target.value))}
+          min={0}
+          max={50} />
+      </div>
+
+      <div className="d-grid gap-2 col-6 mx-auto my-4">
+        <button 
+          className="btn btn-dark" 
+          type="button" 
+          onClick={() => {classifyKMeans()}}>Classificar kClusters</button>
+      </div>
+    </>
+
+    return output
+  }
+
+
 
   return (
     <>
@@ -149,55 +240,15 @@ function App() {
           <label htmlFor="csv-file" className="form-label">Algoritmo</label>
           <select className="form-select mb-3" value={algorithm} onChange={(e) => setAlgorithm(e.target.value)}>
             <option value="knn">KNN</option>
-            <option value="k-means">K-Means</option>
+            <option value="kmeans">K-Means</option>
           </select>
-
           {
             (algorithm === "knn")
             ?
-              <>
-                <label htmlFor="csv-file" className="form-label">Arquivo CSV de treino</label>
-                <input
-                  className="form-control mb-3"
-                  type="file"
-                  id="csv-file"
-                  accept=".csv"
-                  onChange={(e) => getFile(e, "training")}
-                />
-
-                <label htmlFor="csv-file" className="form-label">Arquivo CSV de teste</label>
-                <input
-                  className="form-control mb-3"
-                  type="file"
-                  id="csv-file"
-                  accept=".csv"
-                  onChange={(e) => getFile(e, "test")}
-                />
-
-                <div className="col-5">
-                  <label className="form-label">K</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    onChange={(e) => setKNeighbor(parseInt(e.target.value))}
-                    min={0}
-                    max={50} />
-                </div>
-              </>
+            renderKnn()
             :
-            <>
-              <label htmlFor="csv-file" className="form-label">Arquivo CSV</label>
-              <input
-                className="form-control mb-3"
-                type="file"
-                id="csv-file"
-                accept=".csv"
-                onChange={(e) => getFile(e, "")}
-              />
-            </>
+            renderKmeans()
           }
-          
-          
 
           {
             errorMessage !== "" 
@@ -209,14 +260,8 @@ function App() {
             null
           }
 
-          <div className="d-grid gap-2 col-6 mx-auto my-4">
-            <button className="btn btn-dark" type="button" onClick={() => {classify()}}>Calcular Acurácia</button>
-          </div>
+         
         </div>
-
-        {
-          showMatrix()
-        }
 
         
         {
@@ -230,8 +275,6 @@ function App() {
           : 
           null
         }
-        
-
       </div>
     </>
   );

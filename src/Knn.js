@@ -1,6 +1,5 @@
 class Knn{
     #kNeighbors;
-    #data;
     #dataTraining;
     #dataTest;
     #results;
@@ -8,7 +7,6 @@ class Knn{
 
     constructor(){
         this.#kNeighbors = 0;
-        this.#data = [];
         this.#dataTraining = [];
         this.#dataTest = [];
         this.#results = [];
