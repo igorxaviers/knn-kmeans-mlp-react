@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Knn from './Knn'
 import KMeans from "./KMeans";
 import ConfusionMatrix from "./components/ConfusionMatrix";
+import ScatterPlot from "./components/ScatterPlot";
  // import { getFile } from "./importFile";
 
 function App() {
@@ -275,6 +276,7 @@ function App() {
           : 
           null
         }
+        <ScatterPlot/>
       </div>
     </>
   );
