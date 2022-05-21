@@ -23,11 +23,9 @@ class KMeans{
     }
 
     predict(data){
-        let mean;
         let distancesAux;
         let distance;
         let oldCentroids = [];
-
 
         // gera os centroides aleatorios
         //VER SE NAO EXISTE JA ESSE CENTROIDE !!!!!!!!!!!!!!!!!!!
@@ -82,13 +80,8 @@ class KMeans{
                     this.#centroids[i][j] = centAux[i][j] / counts[i][0];
                 }
             }
-            console.log('------------ NOVO ----------')
-            console.table(oldCentroids);
-            console.log('----------------------')
-            console.table(this.#centroids);
         }
-
-        console.log(this.#results);
+        this.separeteDataByClass();
     }
 
     euclidianDistance(row, centroid){
@@ -100,7 +93,6 @@ class KMeans{
     }
 
     compareCentroids(oldCentroids, newCentroids){
-        debugger;
         let isSame = true;
         for(let i=0; i<newCentroids.length; i++) {
             console.log(JSON.stringify(oldCentroids[i]));
@@ -110,6 +102,19 @@ class KMeans{
             }
         }
         return isSame;
+    }
+
+    separeteDataByClass(){
+        let classes = [];
+        let classIndex;
+        this.#distances.forEach((row, rowIndex) => {  
+            classIndex = row.centroid;
+            if(classes[classIndex] === undefined){
+                classes[classIndex] = [];
+            }
+            classes[classIndex].push(this.#data[rowIndex]);
+        });
+        this.#results = classes;
     }
 
     get getKClusters(){
@@ -126,6 +131,10 @@ class KMeans{
 
     get getDistances(){
         return this.#distances;
+    }
+
+    get getResults(){
+        return this.#results;
     }
 
 }

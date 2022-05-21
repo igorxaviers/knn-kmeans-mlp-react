@@ -2,13 +2,6 @@ import { ReactDOM } from "react";
 
 const ConfusionMatrix = (props) => {
 
-    // let auxMatrix = new Array(5);
-    // auxMatrix.fill('a')
-    // for (let i = 0; i < auxMatrix.length; i++) {
-    //     auxMatrix[i] = new Array(5);
-    //     auxMatrix[i].fill('a');
-    // }
-
     const sumRowElements = (row) => {
         let sum = 0;
         row.forEach(el => {
