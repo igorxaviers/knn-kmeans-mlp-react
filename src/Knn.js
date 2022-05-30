@@ -20,11 +20,9 @@ class Knn{
     predict(data){
         this.#dataTest = [...data];
         var minors = new Array(this.#kNeighbors);
-        var result = [];
         var distances = [];
         var distance = 0;
         var nearestNeighbors = Object.create(null);
-        let selectedClass = '';
 
         this.#dataTest.forEach((test, testIndex) => {
             minors = [];
@@ -57,7 +55,6 @@ class Knn{
                 nearestNeighbors[nome.class] = 1;
               }
             }
-
 
             //Estrurura de vizinhos
             let classes = [];

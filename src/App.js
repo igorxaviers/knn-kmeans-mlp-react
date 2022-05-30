@@ -1,21 +1,24 @@
 import { useState, useEffect } from "react";
 import Knn from './Knn'
 import KMeans from "./KMeans";
+import MLP from "./MLP";
 import ConfusionMatrix from "./components/ConfusionMatrix";
 import ScatterPlot from "./components/ScatterPlot";
  // import { getFile } from "./importFile";
 
 function App() {
 
-  const [algorithm, setAlgorithm] = useState("knn");
+  const [algorithm, setAlgorithm] = useState("mlp");
 
-  //knn
+  //knn/mlp
   const [fileHeader, setHeader] = useState([]);
   const [fileDataTraining, setFileDataTraining] = useState([]);
   const [fileDataTest, setFileDataTest] = useState([]);
   const [confusionMatrix, setConfusionMatrix] = useState([]);
-  const [kNeighbor , setKNeighbor] = useState(0);
   const [classes, setClasses] = useState([]);
+
+  //knn
+  const [kNeighbor , setKNeighbor] = useState(0);
 
   //k-means
   const [fileHeaderKMeans, setHeaderKMeans] = useState([]);
@@ -26,15 +29,16 @@ function App() {
   const [centroids, setCentriods] = useState([]);
 
   //mlp
-  const [fileHeaderMLP, setHeaderMLP] = useState([]);
-  const [fileDataMLP, setFileDataMLP] = useState([]);
+  const [mlpClassifier, setMlpClassifier] = useState({});
   const [inputLayer, setInputLayer] = useState(0);
   const [outputLayer, setOutputLayer] = useState(0);  
   const [hiddenLayer, setHiddenLayer] = useState(0);
-  const [maxError, setMaxError] = useState(0);  
-  const [maxIterations, setMaxIterations] = useState(0);
-  const [nValue, setNValue] = useState(0);
-  const [transferFunction, setTransferFunction] = useState("");
+  const [maxError, setMaxError] = useState(0.1);  
+  const [maxIterations, setMaxIterations] = useState(50);
+  const [nValue, setNValue] = useState(1);
+  const [transferFunction, setTransferFunction] = useState(1);
+  const [showTraningFile, setShowTraningFile] = useState(false);
+
   
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -68,7 +72,6 @@ function App() {
         auxMatrix[i].fill(0);
       }
 
-
       //Contabilizar as ocorrências de classes
       classes.forEach((classL, lineIndex) => {
         result.forEach((resultN, testIndex) => {
@@ -99,6 +102,39 @@ function App() {
     setClusters(kmeansClassifier.getResults);
   }
 
+  const getClasses = (data) => {
+    let classes = [];
+    data.forEach(line => {
+      let classLine = line[line.length-1];
+      classes.push(classLine);
+    });
+    classes = ([...new Set(classes)]);
+    let input = data[0].length - 1;
+    let output = classes.length;
+    setClasses(classes);
+    setInputLayer(input);
+    setOutputLayer(output);
+    setHiddenLayer(Math.floor((input + output) / 2));
+  }
+
+  const trainMLP = () => {
+    const mlpClassifier = new MLP(inputLayer, outputLayer, hiddenLayer, maxError, maxIterations, nValue, fileDataTraining, transferFunction, classes);
+    mlpClassifier.init();
+
+    if(mlpClassifier.train()){
+      window.mlp = mlpClassifier;
+      setShowTraningFile(true);
+    }
+  }
+
+  const testMLP = () => {
+
+    const mlpClassifier = window.mlp
+    mlpClassifier.dataTest = fileDataTest;
+    console.log(mlpClassifier.dataTest);
+    mlpClassifier.test();
+  }
+
   const getFile = (e, type) => {
     let file = e.target.files[0];
     let reader = new FileReader();
@@ -107,10 +143,9 @@ function App() {
     reader.onload = (e) => {
       let csv = e.target.result;
       let data = csvToJson(csv);
-      
-      if(algorithm === "knn") {
-        setHeader(data[0]);
 
+      if(algorithm === "knn" || algorithm === "mlp") {
+        setHeader(data[0]);
         if(type === "training")
           setFileDataTraining(data.slice(1));
         else
@@ -120,6 +155,10 @@ function App() {
         setHeaderKMeans(data[0].length-1);
         setFileDataKMeans(data.slice(1));
         setClusters([data.slice(1)]);
+      }
+
+      if(algorithm === "mlp") {
+        getClasses(data.slice(1));
       }
     }
   }
@@ -261,34 +300,28 @@ function App() {
   const renderMLP = () => {
     let output =  
     <>
-      <label htmlFor="csv-file" className="form-label">Arquivo CSV</label>
-      <input
-        className="form-control mb-3"
-        type="file"
-        id="csv-file"
-        accept=".csv"
-        onChange={(e) => getFile(e, "training")}
-      />
-      
-      <label htmlFor="csv-file" className="form-label">Arquivo CSV</label>
-      <input
-        className="form-control mb-3"
-        type="file"
-        id="csv-file"
-        accept=".csv"
-        onChange={(e) => getFile(e, "test")}
-      />
+      { !showTraningFile ? 
+      <>
+        <label htmlFor="csv-file" className="form-label">Arquivo de Treinamento</label>
+        <input
+          className="form-control mb-3"
+          type="file"
+          id="csv-file"
+          accept=".csv"
+          onChange={(e) => getFile(e, "training")}/>
+      </>
+      : null}
 
       <div className="row mx-0 mt-3">
-        <div className="col-4">
+        <div className="col-4 ps-0">
           <div className="mt-2">
             <label className="form-label">Camada de Entrada</label>
             <input
               type="number"
               className="form-control"
               value={inputLayer}
-              onChange={(e) => setInputLayer(parseInt(e.target.value))}
-              min={0}
+              disabled={true}
+              min={1}
               max={50} />
           </div>
 
@@ -297,20 +330,21 @@ function App() {
             <input
               type="number"
               className="form-control"
-              value={hiddenLayer}
-              onChange={(e) => setHiddenLayer(parseInt(e.target.value))}
-              min={0}
+              value={outputLayer}
+              disabled={true}
+              min={1}
               max={50} />
           </div>
           
           <div className="mt-2">
-            <label className="form-label">Camada de Oculta</label>
+            <label className="form-label">Camada Oculta</label>
             <input
               type="number"
               className="form-control"
-              value={outputLayer}
-              onChange={(e) => setOutputLayer(parseInt(e.target.value))}
-              min={0}
+              value={hiddenLayer}
+              disabled={showTraningFile}
+              onChange={(e) => setHiddenLayer(parseInt(e.target.value))}
+              min={1}
               max={50} />
           </div>
         </div>
@@ -318,34 +352,31 @@ function App() {
         <div className="col-4">
           <div className="mt-2">
             <label className="form-label">Valor do erro</label>
-            <input 
-              type="number" className="form-control" value={maxError} onChange={(e) => setMaxError(parseInt(e.target.value))} min={0} max={50} />
+            <input type="number" className="form-control" disabled={showTraningFile} value={maxError} onChange={(e) => setMaxError(parseFloat(e.target.value))} min={0} max={1} />
           </div>
           <div className="mt-2">
             <label className="form-label">Nº de iterações</label>
-            <input
-              type="number" className="form-control" value={maxIterations} onChange={(e) => setMaxIterations(parseInt(e.target.value))} min={0} max={50} />
+            <input type="number" className="form-control" disabled={showTraningFile} value={maxIterations} onChange={(e) => setMaxIterations(parseInt(e.target.value))} min={1} />
           </div>
           <div className="mt-2">
             <label className="form-label">Taxa de aprendizagem</label>
-            <input
-              type="number" className="form-control" onChange={(e) => setNValue(parseInt(e.target.value))} min={0} max={50} />
+            <input type="number" className="form-control" disabled={showTraningFile} value={nValue} onChange={(e) => setNValue(parseFloat(e.target.value))} min={0} max={1} />
           </div>
         </div>
 
-        <div className="col-4">
+        <div className="col-4 pe-0">
           <p className="mt-2">Função de transferência</p> 
-          <div onChange={event => setTransferFunction(event.target.value)}>
+          <div onChange={event => setTransferFunction(parseInt(event.target.value))}>
             <div className="form-check">
-              <input className="form-check-input" type="radio" name="transferFunction" value="1" defaultChecked />
+              <input className="form-check-input" disabled={showTraningFile} type="radio" name="transferFunction" value="1" defaultChecked/>
               <label className="form-check-label"> Logística </label>
             </div>
             <div className="form-check">
-              <input className="form-check-input" type="radio" name="transferFunction" value="2"/> 
+              <input className="form-check-input" disabled={showTraningFile} type="radio" name="transferFunction" value="2"/> 
               <label className="form-check-label"> Linear </label>
             </div>
             <div className="form-check">
-              <input className="form-check-input" type="radio" name="transferFunction" value="3"/> 
+              <input className="form-check-input" disabled={showTraningFile} type="radio" name="transferFunction" value="3"/> 
               <label className="form-check-label"> Hiperbólica </label>
             </div>
           </div>
@@ -353,12 +384,42 @@ function App() {
         
       </div>
 
-      <div className="d-grid gap-2 col-6 mx-auto my-4">
-        <button 
-          className="btn btn-dark" 
-          type="button" 
-          onClick={() => {classifyKMeans()}}>Classificar kClusters</button>
-      </div>
+      { showTraningFile ? 
+      <>
+        <label htmlFor="csv-file" className="form-label mt-4">Arquivo de Teste</label>
+        <input
+          className="form-control mb-3"
+          type="file"
+          id="csv-file"
+          accept=".csv"
+          onChange={(e) => getFile(e, "test")}
+        />
+      </>
+      : null }
+
+
+      { !showTraningFile ? 
+      <>
+        <div className="d-grid gap-2 col-6 mx-auto my-4">
+          <button 
+            className="btn btn-dark" 
+            type="button" 
+            onClick={() => {trainMLP()}}>Treinar Rede</button>
+        </div>
+      </>
+      : null }
+
+      { showTraningFile ? 
+      <>
+        <div className="d-grid gap-2 col-6 mx-auto my-4">
+          <button 
+            className="btn btn-dark" 
+            type="button" 
+            onClick={() => {testMLP()}}>Testar Rede</button>
+        </div>
+      </>
+      : null }
+
     </>
     
     return output
