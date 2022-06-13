@@ -12,3 +12,15 @@
     overflow: hidden;
     border-radius: 0.8em !important;
 }
+
+.fixed-header{
+    overflow-y: auto;
+    height: 400px;
+}
+
+.fixed-header thead th {
+    position: sticky !important;
+    background-color: #fff;
+    border-bottom: 1px #333 solid;
+    top: -2px;
+}

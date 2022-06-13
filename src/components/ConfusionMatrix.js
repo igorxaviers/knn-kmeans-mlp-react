@@ -42,8 +42,6 @@ const ConfusionMatrix = (props) => {
     }
 
     const Render = () => {
-        console.log(props.matrix);
-
         let saida = 
             <div className="bg-white rounded p-4 border mb-5">
                 <h4 className="mb-4">Matriz de Confusão</h4>

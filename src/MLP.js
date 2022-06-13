@@ -37,6 +37,9 @@ class MLP {
     //classes
     #classes
 
+    //Matriz de confusão
+    #confusionMatrix
+
     constructor(inputLayer, outputLayer, hiddenLayer, maxError, maxIterations, nValue, data, transferFunction, classes){
         this.#inputLayer = inputLayer;
         this.#outputLayer = outputLayer;
@@ -46,11 +49,13 @@ class MLP {
         this.#nValue = nValue;
         this.#transferFunction = transferFunction;
         this.#dataTraining = data;
+        this.#classes = classes;
+        this.#dataTest = [];
         this.#normalizationValues = [];
         this.#outputWeights = [];
         this.#hiddenWeights = [];
         this.#wantedMatrix = [];
-        this.#classes = classes;
+        this.#confusionMatrix = [];
         this.#error = 0;
     }
 
@@ -65,16 +70,14 @@ class MLP {
     train(){
         let iteration = 0;
         while(this.#error < this.#maxError && iteration < this.#maxIterations){
-            // setTimeout(() => {
-                this.trainEpoch();
-                console.log('===========================================');
-                console.log('ITERAÇÃO/ÉPOCA:' +  iteration);
-                console.log('ERRO: ' + this.#error);
-                console.table(this.#hiddenLayer);
-                console.table(this.#outputLayer);
-                console.log('===========================================');
-                iteration++;
-            // }, 500);
+            this.trainEpoch();
+            console.log('===========================================');
+            console.log('ITERAÇÃO/ÉPOCA:' +  iteration);
+            console.log('ERRO: ' + this.#error);
+            console.table(this.#hiddenLayer);
+            console.table(this.#outputLayer);
+            console.log('===========================================');
+            iteration++;
         }
         console.log(this.#dataTraining);
         return true;
@@ -90,53 +93,63 @@ class MLP {
             this.updateWeightsOutput();
             this.updateWeightsHidden(data);
             this.calculateError();
-            console.log('data: ' + i);
+            // console.log('data: ' + i);
             i++;
         }
     }
 
     test(){
-
         this.normalizeData(this.#dataTest);
-        console.log(this.#dataTest);
 
-        // let results = []
-        // for(let data of this.#dataTest){
+        let results = []
+        let higher = 0;
+        let higherIndex = 0;
+        let expectedClass = '';
+        let predictedClass = '';
+        let expectedClasstx = '';
 
+        let auxMatrix = new Array(this.#classes.length);
+        auxMatrix.fill(0);
+        for (let i = 0; i < auxMatrix.length; i++) {
+          auxMatrix[i] = new Array(this.#classes.length);
+          auxMatrix[i].fill(0);
+        }
 
-        //     for (let lin = 0; lin < this.#hiddenWeights.length; lin++) {
-        //         for (let col = 0; col < this.#hiddenWeights[i].length; col++) {
-        //             results.push(this.#hiddenWeights[lin][col] * data[col]);
-        //         }
-        //     }
-
-        //     for (let i = 0; i < results.length; i++) {
-
-        //     }
-            
-        //     for (let lin = 0; lin < this.#outputWeights.length;lin++) {
-        //         for (let col = 0; col < this.#outputWeights[lin].length; col++) {
-        //         }
-        //     }
-        // }
-
-        // debugger;
-        // return true;
-    }
-
-    testEpoch(){
-        let i = 0;
         for(let data of this.#dataTest){
             this.calculateNetHidden(data);
-            this.calculateNetOutput();
-            this.calculateErrorOutput(this.#wantedMatrix[i]); 
-            this.calculateErrorHidden();
-            this.updateWeightsOutput();
-            this.updateWeightsHidden(data);
-            this.calculateError();
-            console.log('data: ' + i);
-            i++;
+            this.calculateNetOutput();        
+            higher = Number.MIN_SAFE_INTEGER;
+            higherIndex = 0;
+
+            for(let i=0; i<this.#outputLayer.length; i++){
+                results.push(this.#outputLayer[i].getI);
+            }
+
+            for(let i=0; i<results.length; i++){
+                if(results[i] > higher){
+                    higher = results[i];
+                    higherIndex = i;
+                }
+            }
+
+            predictedClass = this.#classes[higherIndex];
+            expectedClass = this.#classes.indexOf(data[data.length-1]);
+            expectedClasstx = data[data.length-1];
+            console.log('expected: ' + expectedClasstx + ' predicted: ' + predictedClass); 
+            for (let i = 0; i < auxMatrix.length; i++) {
+                for (let j = 0; j < auxMatrix.length; j++) {
+                    if(i === j && i === higherIndex){
+                        auxMatrix[i][i]++;
+                    }
+                    else if(i === expectedClass && j === higherIndex){
+                        auxMatrix[i][j]++;
+                    }
+                }   
+            }
+            results = [];
         }
+
+        this.#confusionMatrix = auxMatrix;
     }
 
     calculateNetHidden(data){
@@ -146,6 +159,19 @@ class MLP {
             for(let i=0; i<weight.length; i++){
                 net += weight[i] * data[i];
             }
+            this.#hiddenLayer[index].setNet = net;
+            this.#hiddenLayer[index].setI = this.#transferFunction(net);
+        });
+    }
+
+    calculateNetHiddenTest(data){
+        let net = 0;
+        this.#hiddenWeights.forEach((weight, index) => {
+            net = 0;
+            for(let i=0; i<weight.length; i++){
+                net += weight[i] * data[i];
+            }
+
             this.#hiddenLayer[index].setNet = net;
             this.#hiddenLayer[index].setI = this.#transferFunction(net);
         });
@@ -166,9 +192,9 @@ class MLP {
     calculateErrorOutput(wantedVet){
         let error = 0;
         for(let i=0; i<this.#outputLayer.length; i++){
-            error = wantedVet[i] - this.#outputLayer[i].getI ;
+            error = wantedVet[i] - this.#outputLayer[i].getI;
             this.#outputLayer[i].setError = error;
-            this.#outputLayer[i].gradientError = this.#transferFunction(error);
+            this.#outputLayer[i].gradientError = this.#transferFunction(this.#outputLayer[i].getNet, true) * error;
         }
     }
 
@@ -178,14 +204,14 @@ class MLP {
             for(let lin=0; lin < this.#outputWeights.length; lin++){
                 error += this.#outputWeights[lin][col] * this.#outputLayer[lin].gradientError
             }
-            this.#hiddenLayer[col].gradientError = this.#transferFunction(error);
+            this.#hiddenLayer[col].gradientError = this.#transferFunction(this.#hiddenLayer[col].getNet, true) * error;
         }
     }
 
     //peso atual + nValue * gradientError * i(da camada oculta)
     updateWeightsOutput(){
         for(let i=0; i < this.#outputWeights.length; i++){
-            for(let j=0; j < this.#outputWeights[i].length; j++){
+            for (let j = 0; j < this.#hiddenWeights.length; j++) {
                 this.#outputWeights[i][j] = this.#outputWeights[i][j] + this.#nValue * this.#outputLayer[i].gradientError * this.#hiddenLayer[j].getI;
             }
         }
@@ -193,9 +219,9 @@ class MLP {
 
     updateWeightsHidden(data){
         for (let i = 0; i < this.#hiddenWeights.length; i++) {
-            for (let j = 0; j < this.#hiddenWeights.length - 1; j++) {
-                this.#hiddenWeights[i][j] = this.#hiddenWeights[i][j] + this.#nValue * this.#hiddenLayer[i].gradientError * data[j];                
-            }            
+            for (let j = 0; j < data.length-1; j++) {
+                this.#hiddenWeights[i][j] = this.#hiddenWeights[i][j] + this.#nValue * this.#hiddenLayer[i].getGradientError * data[j];                
+            }
         }
     }
 
@@ -303,28 +329,46 @@ class MLP {
         this.#wantedMatrix = matrixWanted;
     }
 
-    //função de transferencia Linear
-    linearTransfer(net){
-        return net/10;
+    //função de transferencia Logística
+    logisticsTransfer(value, derivative = false){
+        let fNet = 1 / (1 + Math.exp(-value));
+        if(derivative){
+            return fNet * (1 - fNet);
+        }
+        else{
+            return fNet;
+        }
     }
 
-    //função de transferencia Logística
-    logisticsTransfer(net){
-        return (1/(1+(Math.exp(-net))));
+    //função de transferencia Linear
+    linearTransfer(value, derivative = false){
+        let fNet = value/10;
+        if(derivative){
+            return 0.1; //lembrar de calcular
+        }
+        else{
+            return fNet;
+        }
     }
     
     //função de transferencia Tangente Hiperbólica (função tanh())
-    hyperbolicTransfer(net){
-        return Math.tanh(net);
+    hyperbolicTransfer(value, derivative = false){
+        let fNet = Math.tanh(value);
+        if(derivative){
+            return 1 - Math.pow(fNet, 2);
+        }
+        else{
+            return fNet;
+        }
     }
 
     selectTransferFunction(transferFunction){
         switch(transferFunction){
             case 1:
-                this.#transferFunction = this.linearTransfer;
+                this.#transferFunction = this.logisticsTransfer;
                 break;
             case 2:
-                this.#transferFunction = this.logisticsTransfer;
+                this.#transferFunction = this.linearTransfer;
                 break;
             case 3:
                 this.#transferFunction = this.hyperbolicTransfer;
@@ -335,14 +379,43 @@ class MLP {
     }
     
 
-    set dataTest(dataTest){
+    set setDataTest(dataTest){
         this.#dataTest = dataTest;
     }
 
-    get dataTest(){
+    get getDataTest(){
         return this.#dataTest;
     }
 
+    
+    get getDataTraining(){
+        return this.#dataTraining;
+    }
+    
+    set setError(error){
+        this.#error = error;
+    }
+    get getError(){
+        return this.#error;
+    }
+
+    set setMaxError(maxError){
+        this.#maxError = maxError;
+    }
+    get getMaxError(){
+        return this.#maxError;
+    }
+
+    set setMaxIterations(maxIterations){
+        this.#maxIterations = maxIterations;
+    }
+    get getMaxIterations(){
+        return this.#maxIterations;
+    }
+
+    get getConfusionMatrix(){
+        return this.#confusionMatrix;
+    }
 }
 
 export default MLP;

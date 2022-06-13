@@ -34,6 +34,7 @@ class KMeans{
         }
 
         while(!this.compareCentroids(oldCentroids, this.#centroids)) {
+            debugger;
 
             oldCentroids = JSON.parse(JSON.stringify(this.#centroids));
 
@@ -63,7 +64,6 @@ class KMeans{
                 counts[i] = new Array(this.#centroids[0].length);
                 counts[i].fill(0);
             }
-
             centAux.forEach((centroid, centroidIndex) => {
                 for(let i=0; i<this.#data[0].length; i++) {
                     this.#distances.forEach((row, rowIndex) => {
@@ -84,7 +84,7 @@ class KMeans{
         this.separeteDataByClass();
     }
 
-    euclidianDistance(row, centroid){
+    euclidianDistance(row, centroid){      
         let distance = 0;
         for(var i = 0; i < centroid.length - 1; i++){
             distance += Math.pow(centroid[i] - row[i], 2);
@@ -93,6 +93,8 @@ class KMeans{
     }
 
     compareCentroids(oldCentroids, newCentroids){
+        debugger;
+
         let isSame = true;
         for(let i=0; i<newCentroids.length; i++) {
             console.log(JSON.stringify(oldCentroids[i]));

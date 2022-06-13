@@ -8,6 +8,7 @@ class Neuron {
         this.#error = 0;
         this.#i = 0;
         this.#net = 0;
+        this.#gradientError = 0;
     }
 
     //Valor utilizado para realizar o cálculo do erro geral da rede (apenas nos neurônios de saída)

@@ -4,6 +4,8 @@ import KMeans from "./KMeans";
 import MLP from "./MLP";
 import ConfusionMatrix from "./components/ConfusionMatrix";
 import ScatterPlot from "./components/ScatterPlot";
+import LineChart from "./components/LineChart";
+import DataTable from "./components/DataTable";
  // import { getFile } from "./importFile";
 
 function App() {
@@ -29,16 +31,18 @@ function App() {
   const [centroids, setCentriods] = useState([]);
 
   //mlp
-  const [mlpClassifier, setMlpClassifier] = useState({});
   const [inputLayer, setInputLayer] = useState(0);
   const [outputLayer, setOutputLayer] = useState(0);  
   const [hiddenLayer, setHiddenLayer] = useState(0);
-  const [maxError, setMaxError] = useState(0.1);  
+  const [maxError, setMaxError] = useState(0.00001);  
   const [maxIterations, setMaxIterations] = useState(50);
   const [nValue, setNValue] = useState(1);
   const [transferFunction, setTransferFunction] = useState(1);
+  const [errors, setErrors] = useState([]);
+  const [iterations, setIterations] = useState([]);
   const [showTraningFile, setShowTraningFile] = useState(false);
-
+  const [showgGraph, setShowgGraph] = useState(false);
+  
   
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -89,7 +93,8 @@ function App() {
 
       setConfusionMatrix(auxMatrix);
       console.log(auxMatrix);
-  }
+      console.log(result);
+    }
 
   const classifyKMeans = () => {
     const kmeansClassifier = new KMeans();
@@ -120,19 +125,57 @@ function App() {
   const trainMLP = () => {
     const mlpClassifier = new MLP(inputLayer, outputLayer, hiddenLayer, maxError, maxIterations, nValue, fileDataTraining, transferFunction, classes);
     mlpClassifier.init();
+    setShowgGraph(true);
+    train(mlpClassifier);
+    window.mlp = mlpClassifier;
+    setFileDataTraining(mlpClassifier.getDataTraining);
+    //   setShowTraningFile(true);
 
-    if(mlpClassifier.train()){
-      window.mlp = mlpClassifier;
-      setShowTraningFile(true);
-    }
+    // if(mlpClassifier.train()){
+
+    //   setShowTraningFile(true);
+    // }
   }
+
+  const train = (mlpClassifier) => {
+    setErrors([]);
+    setIterations([]);
+    let errorsArr = [];
+    let iterationsArr = [];
+    let iteration = 0;
+
+    do{
+      mlpClassifier.trainEpoch();
+
+      errorsArr.push(mlpClassifier.getError);
+      setErrors(errorsArr);
+
+      if(iteration % 10 === 0){
+        iterationsArr.push(iteration);
+      }
+      setIterations(iterationsArr);
+
+      iteration++;
+    }while(mlpClassifier.getError >= mlpClassifier.getMaxError && iteration < mlpClassifier.getMaxIterations);
+    console.log(errors);
+    console.log(iterations);
+    setShowgGraph(true);
+    setShowTraningFile(true);
+  }
+
+  const getData = () => {
+    return window.mlp.getDataTraining;
+  }
+
 
   const testMLP = () => {
 
     const mlpClassifier = window.mlp
-    mlpClassifier.dataTest = fileDataTest;
-    console.log(mlpClassifier.dataTest);
+    mlpClassifier.setDataTest = fileDataTest;
     mlpClassifier.test();
+    setConfusionMatrix(mlpClassifier.getConfusionMatrix);
+    let matrix = mlpClassifier.getConfusionMatrix;
+    console.log(matrix);
   }
 
   const getFile = (e, type) => {
@@ -288,10 +331,14 @@ function App() {
           onClick={() => {classifyKMeans()}}>Classificar kClusters</button>
       </div>
 
-      <ScatterPlot 
-        attributes={fileHeaderKMeans} 
-        clusters={clusters}
-        centroids={centroids}/>
+      {fileHeaderKMeans ?
+      <>
+        <ScatterPlot 
+          attributes={fileHeaderKMeans} 
+          clusters={clusters}
+          centroids={centroids}/>
+      </>
+      :null}
     </>
     
     return output
@@ -381,7 +428,6 @@ function App() {
             </div>
           </div>
         </div>
-        
       </div>
 
       { showTraningFile ? 
@@ -394,23 +440,7 @@ function App() {
           accept=".csv"
           onChange={(e) => getFile(e, "test")}
         />
-      </>
-      : null }
 
-
-      { !showTraningFile ? 
-      <>
-        <div className="d-grid gap-2 col-6 mx-auto my-4">
-          <button 
-            className="btn btn-dark" 
-            type="button" 
-            onClick={() => {trainMLP()}}>Treinar Rede</button>
-        </div>
-      </>
-      : null }
-
-      { showTraningFile ? 
-      <>
         <div className="d-grid gap-2 col-6 mx-auto my-4">
           <button 
             className="btn btn-dark" 
@@ -420,6 +450,40 @@ function App() {
       </>
       : null }
 
+      <p>Dados de treinamento</p>
+      <DataTable data={fileDataTraining} header={fileHeader}/>
+
+      <p>Dados de teste</p>
+      <DataTable data={fileDataTest} header={fileHeader}/>
+
+      { !showTraningFile ? 
+      <>
+        <div className="d-grid gap-2 col-6 mx-auto my-4">
+          <button 
+            className="btn btn-dark" 
+            type="button" 
+            disabled={fileDataTraining.length > 0 ? false : true}
+            onClick={() => {trainMLP()}}>Treinar Rede</button>
+        </div>
+      </>
+      : null }
+
+      <div>
+        <p>Gráfico de evolução do erro</p>
+        <LineChart error={errors} iteration={iterations}/>
+      </div>
+
+      {
+        (confusionMatrix != null && confusionMatrix.length > 0)
+        ?
+          <ConfusionMatrix 
+            classes={classes} 
+            size={classes.length} 
+            matrix={confusionMatrix}
+          />
+        : 
+        null
+      }
     </>
     
     return output
@@ -428,7 +492,7 @@ function App() {
 
   return (
     <>
-      <div className="col-lg-6 col-md-8 col-12 mx-auto pt-5">
+      <div className="col-lg-8 col-md-8 col-12 mx-auto pt-5">
         <h1 className="text-center fw-bolder">{algorithm.toUpperCase()}</h1>
         <div className="mt-4 mb-3 col-md-8 border bg-white rounded p-3 px-4 mx-auto">
 
