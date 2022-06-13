@@ -135,17 +135,23 @@ class MLP {
             predictedClass = this.#classes[higherIndex];
             expectedClass = this.#classes.indexOf(data[data.length-1]);
             expectedClasstx = data[data.length-1];
+
             console.log('expected: ' + expectedClasstx + ' predicted: ' + predictedClass); 
-            for (let i = 0; i < auxMatrix.length; i++) {
-                for (let j = 0; j < auxMatrix.length; j++) {
+
+            var flag = false;
+            for (let i = 0; (i < auxMatrix.length && !flag); i++) {
+                for (let j = 0; (j < auxMatrix[i].length && !flag); j++) {
                     if(i === j && i === higherIndex){
                         auxMatrix[i][i]++;
+                        flag = true;
                     }
                     else if(i === expectedClass && j === higherIndex){
                         auxMatrix[i][j]++;
+                        flag = true;
                     }
                 }   
             }
+
             results = [];
         }
 
