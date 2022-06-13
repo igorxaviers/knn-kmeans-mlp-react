@@ -160,27 +160,14 @@ class MLP {
 
     calculateNetHidden(data){
         let net = 0;
-        this.#hiddenWeights.forEach((weight, index) => {
+        for (let i = 0; i < this.#hiddenWeights.length; i++) {
             net = 0;
-            for(let i=0; i<weight.length; i++){
-                net += weight[i] * data[i];
+            for (let j = 0; j < this.#hiddenWeights[i].length; j++) {
+                net += this.#hiddenWeights[i][j] * data[j];
             }
-            this.#hiddenLayer[index].setNet = net;
-            this.#hiddenLayer[index].setI = this.#transferFunction(net);
-        });
-    }
-
-    calculateNetHiddenTest(data){
-        let net = 0;
-        this.#hiddenWeights.forEach((weight, index) => {
-            net = 0;
-            for(let i=0; i<weight.length; i++){
-                net += weight[i] * data[i];
-            }
-
-            this.#hiddenLayer[index].setNet = net;
-            this.#hiddenLayer[index].setI = this.#transferFunction(net);
-        });
+            this.#hiddenLayer[i].setNet = net;
+            this.#hiddenLayer[i].setI = this.#transferFunction(net);
+        }
     }
 
     calculateNetOutput(){
