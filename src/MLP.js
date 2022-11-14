@@ -192,8 +192,9 @@ class MLP {
     }
 
     calculateErrorHidden(){
-        let error = 0;
         for(let col=0; col < this.#outputWeights.length; col++){
+            
+            let error = 0;
             for(let lin=0; lin < this.#outputWeights.length; lin++){
                 error += this.#outputWeights[lin][col] * this.#outputLayer[lin].gradientError
             }
@@ -223,7 +224,8 @@ class MLP {
         for(let i=0; i<this.#outputLayer.length; i++){
             error += Math.pow(this.#outputLayer[i].getError, 2);
         }
-        this.#error = this.#transferFunction(error);
+        debugger;
+        this.#error = error / 2;
     }
     
 
@@ -320,6 +322,7 @@ class MLP {
         }
 
         this.#wantedMatrix = matrixWanted;
+        debugger;
     }
 
     //função de transferencia Logística
